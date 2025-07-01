@@ -1,4 +1,9 @@
 using MediatR;
+using Questao5.Application.Commands.Requests;
+using Questao5.Application.Commands.Responses;
+using Questao5.Application.Handlers;
+using Questao5.Application.Queries.Requests;
+using Questao5.Application.Queries.Responses;
 using Questao5.Infrastructure.Sqlite;
 using System.Reflection;
 
@@ -31,6 +36,9 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+builder.Services.AddScoped<IRequestHandler<MovimentarContaCommand, MovimentarContaResult>, MovimentarContaHandler>();
+builder.Services.AddScoped<IRequestHandler<SaldoContaCorrenteQuery, SaldoContaCorrenteResult>, SaldoContaCorrenteHandler>();
 
 // sqlite
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
