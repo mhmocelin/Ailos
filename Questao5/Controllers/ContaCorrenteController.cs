@@ -1,10 +1,9 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Questao5.Application.Commands.Requests;
 using Questao5.Application.Commands.Responses;
+using Questao5.Application.Mediator.Interfaces;
 using Questao5.Application.Queries.Requests;
 using Questao5.Application.Queries.Responses;
-using Questao5.Domain.Exceptions;
 
 namespace Questao5.Controllers;
 
@@ -12,23 +11,23 @@ namespace Questao5.Controllers;
 [Route("api/[controller]")]
 public class ContaCorrenteController : BaseController
 {
-    private readonly IMediator _mediator;
+    private readonly IApplicationDispatcher _dispatcher;
 
-    public ContaCorrenteController(IMediator mediator)
+    public ContaCorrenteController(IApplicationDispatcher dispatcher)
     {
-        _mediator = mediator;
+        _dispatcher = dispatcher;
     }
 
     [HttpPost("movimentar")]
     [ProducesResponseType(typeof(MovimentarContaResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> MovimentarConta([FromBody] MovimentarContaCommand command)
-        => Response(await _mediator.Send(command));
+        => Response(await _dispatcher.Send(command));
        
 
     [HttpGet("saldo/{id}")]
     [ProducesResponseType(typeof(SaldoContaCorrenteResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResult), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ConsultarSaldo([FromRoute] Guid id)
-        => Response(await _mediator.Send(new SaldoContaCorrenteQuery(id)));    
+    public async Task<IActionResult> ConsultarSaldo(Guid id)
+        => Response(await _dispatcher.Send(new SaldoContaCorrenteQuery(id)));    
 }

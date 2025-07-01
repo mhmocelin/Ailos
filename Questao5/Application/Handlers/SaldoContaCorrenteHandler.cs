@@ -1,54 +1,35 @@
 ﻿using Dapper;
-using MediatR;
+using Questao5.Application.Mediator.Interfaces;
 using Questao5.Application.Queries.Requests;
 using Questao5.Application.Queries.Responses;
 using Questao5.Domain.Exceptions;
+using Questao5.Infrastructure.Repositories.Interfaces;
 using System.Data;
 
 namespace Questao5.Application.Handlers;
 public class SaldoContaCorrenteHandler : IRequestHandler<SaldoContaCorrenteQuery, SaldoContaCorrenteResult>
 {
-    private readonly IDbConnection _connection;
+    private readonly ISaldoContaCorrenteRepository _repository;
 
-    public SaldoContaCorrenteHandler(IDbConnection connection)
+    public SaldoContaCorrenteHandler(ISaldoContaCorrenteRepository repository)
     {
-        _connection = connection;
+        _repository = repository;
     }
 
     public async Task<SaldoContaCorrenteResult> Handle(SaldoContaCorrenteQuery request, CancellationToken cancellationToken)
     {
-        const string sqlConta = @"
-            SELECT numero, nome, ativo
-            FROM contacorrente
-            WHERE idcontacorrente = @IdContaCorrente;
-        ";
+        var conta = await _repository.ObterContaPorIdAsync(request.IdContaCorrente);
 
-        var conta = await _connection.QuerySingleOrDefaultAsync<dynamic>(sqlConta, new { request.IdContaCorrente });
-
-        if (conta == null)
+        if (conta is null)
             throw new BusinessException("Conta corrente não encontrada.", "INVALID_ACCOUNT");
 
-        if (conta.ativo != 1)
-            throw new BusinessException("Conta corrente está inativa.", "INACTIVE_ACCOUNT");
+        conta.ValidarAtivacao();
 
-        const string sqlSaldo = @"
-            SELECT 
-                SUM(CASE WHEN tipomovimento = 'C' THEN valor ELSE 0 END) AS Creditos,
-                SUM(CASE WHEN tipomovimento = 'D' THEN valor ELSE 0 END) AS Debitos
-            FROM movimento
-            WHERE idcontacorrente = @IdContaCorrente;
-        ";
+        var saldo = await _repository.CalcularSaldoAsync(request.IdContaCorrente);
 
-        var saldoResult = await _connection.QuerySingleOrDefaultAsync(sqlSaldo, new { request.IdContaCorrente });
-
-        decimal creditos = saldoResult?.Creditos ?? 0;
-        decimal debitos = saldoResult?.Debitos ?? 0;
-        decimal saldo = creditos - debitos;
-
-        return new SaldoContaCorrenteResult
-        (
-            conta.numero,
-            conta.nome,
+        return new SaldoContaCorrenteResult(
+            conta.Numero,
+            conta.Nome,
             DateTime.Now,
             saldo
         );

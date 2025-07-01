@@ -1,5 +1,5 @@
-﻿using MediatR;
-using Questao5.Application.Commands.Responses;
+﻿using Questao5.Application.Commands.Responses;
+using Questao5.Application.Mediator.Interfaces;
 
 namespace Questao5.Application.Commands.Requests;
 
